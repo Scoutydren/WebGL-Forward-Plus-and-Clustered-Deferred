@@ -4,9 +4,6 @@ export default function(params) {
   precision highp float;
   
   uniform sampler2D u_gbuffers[${params.numGBuffers}];
-
-  uniform sampler2D u_colmap;
-  uniform sampler2D u_normap;
   uniform sampler2D u_lightbuffer;
   uniform sampler2D u_clusterbuffer;
 
@@ -15,9 +12,10 @@ export default function(params) {
   uniform float u_width;
   uniform float u_height;
   uniform mat4 u_viewMat;
-  varying vec3 v_position;
-  varying vec3 v_normal;
+  uniform vec3 u_eye;
+  
   varying vec2 v_uv;
+  
   vec3 applyNormalMap(vec3 geomnor, vec3 normap) {
     normap = normap * 2.0 - 1.0;
     vec3 up = normalize(vec3(0.001, 1, 0.001));
@@ -75,27 +73,20 @@ export default function(params) {
       return 0.0;
     }
   }
-
   
   void main() {
-    // TODO: extract data from g buffers and do lighting
-    // vec4 gb0 = texture2D(u_gbuffers[0], v_uv);
-    // vec4 gb1 = texture2D(u_gbuffers[1], v_uv);
-    // vec4 gb2 = texture2D(u_gbuffers[2], v_uv);
-    // vec4 gb3 = texture2D(u_gbuffers[3], v_uv);
-    
-    vec3 albedo = texture2D(u_colmap, v_uv).rgb;
-    vec3 normap = texture2D(u_normap, v_uv).xyz;
-    vec3 normal = applyNormalMap(v_normal, normap);
     vec3 fragColor = vec3(0.0);
+    vec4 albedo = texture2D(u_gbuffers[0], v_uv);
+    vec4 normal = texture2D(u_gbuffers[1], v_uv);
+    vec4 position = texture2D(u_gbuffers[2], v_uv);
     
-    vec4 viewPos = u_viewMat * vec4(v_position.x, v_position.y, v_position.z, 1.0);
-    
+    vec4 viewPos = u_viewMat * vec4(position.x, position.y, position.z, 1.0);
+     
     //Getting the frustum index
     int x = int(gl_FragCoord.x / (u_width / float(${params.xSlices})));
     int y = int(gl_FragCoord.y / (u_height / float(${params.ySlices})));
     int z = int((-viewPos.z - u_near) / ((u_far - u_near) / float(${params.zSlices})));
-    
+
     int clusterIdx = x + y * ${params.xSlices} + z * ${params.xSlices} * ${params.ySlices};
     
     const int clusterTextureWidth =  ${params.xSlices} * ${params.ySlices} * ${params.zSlices};
@@ -107,18 +98,24 @@ export default function(params) {
         
       int lightIdx = int(ExtractFloat(u_clusterbuffer, clusterTextureWidth, clusterTextureHeight, clusterIdx, i + 1));
       Light light = UnpackLight(lightIdx);
-      float lightDistance = distance(light.position, v_position);
-      vec3 L = (light.position - v_position) / lightDistance;
-
-      float lightIntensity = cubicGaussian(2.0 * lightDistance / light.radius);
-      float lambertTerm = max(dot(L, normal), 0.0);
-
-      fragColor += albedo * lambertTerm * light.color * vec3(lightIntensity);
+      float lightDist = distance(light.position, position.xyz);
+      
+      float lightIntensity = cubicGaussian(2.0 * lightDist / light.radius);
+      float lambertTerm = max(dot(L, normal.xyz), 0.0);
+      
+      //Calculate Blinn-Phong shading 
+      vec3 L = (light.position - position.xyz) / lightDist;
+      vec3 V = normalize(light.position - u_eye);
+      vec3 H = normalize(V + L);
+      float exponent = 200.0;
+      float specularTerm = pow(max(dot(H, normal.xyz), 0.0), exponent); 
+      
+      fragColor += (albedo.xyz * lambertTerm + specularTerm) * light.color * vec3(lightIntensity);
     }
-
+    
     const vec3 ambientLight = vec3(0.025);
-    fragColor += albedo * ambientLight;
-
+    fragColor += albedo.xyz * ambientLight;
+    
     gl_FragColor = vec4(fragColor, 1.0);
   }
   `;
