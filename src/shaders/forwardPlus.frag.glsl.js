@@ -1,21 +1,21 @@
 export default function(params) {
   return `
-  // TODO: This is pretty much just a clone of forward.frag.glsl.js
-
   #version 100
   precision highp float;
 
   uniform sampler2D u_colmap;
   uniform sampler2D u_normap;
   uniform sampler2D u_lightbuffer;
-
-  // TODO: Read this buffer to determine the lights influencing a cluster
   uniform sampler2D u_clusterbuffer;
 
+  uniform float u_near;
+  uniform float u_far;
+  uniform float u_width;
+  uniform float u_height;
+  uniform mat4 u_viewMat;
   varying vec3 v_position;
   varying vec3 v_normal;
   varying vec2 v_uv;
-
   vec3 applyNormalMap(vec3 geomnor, vec3 normap) {
     normap = normap * 2.0 - 1.0;
     vec3 up = normalize(vec3(0.001, 1, 0.001));
@@ -78,11 +78,26 @@ export default function(params) {
     vec3 albedo = texture2D(u_colmap, v_uv).rgb;
     vec3 normap = texture2D(u_normap, v_uv).xyz;
     vec3 normal = applyNormalMap(v_normal, normap);
-
     vec3 fragColor = vec3(0.0);
-
+    
+    vec4 viewPos = u_viewMat * vec4(v_position.x, v_position.y, v_position.z, 1.0);
+    
+    //Getting the frustum index
+    int x = int(gl_FragCoord.x / (u_width / float(${params.xSlices})));
+    int y = int(gl_FragCoord.y / (u_height / float(${params.ySlices})));
+    int z = int((-viewPos.z - u_near) / ((u_far - u_near) / float(${params.zSlices})));
+    
+    int clusterIdx = x + y * ${params.xSlices} + z * ${params.xSlices} * ${params.ySlices};
+    
+    const int clusterTextureWidth =  ${params.xSlices} * ${params.ySlices} * ${params.zSlices};
+    const int clusterTextureHeight = int(ceil(float(${params.maxLights} + 1) / 4.0));
+    
+    int lightsCount = int(ExtractFloat(u_clusterbuffer, clusterTextureWidth, clusterTextureHeight, clusterIdx, 0));
     for (int i = 0; i < ${params.numLights}; ++i) {
-      Light light = UnpackLight(i);
+      if (i >= lightsCount) break;
+        
+      int lightIdx = int(ExtractFloat(u_clusterbuffer, clusterTextureWidth, clusterTextureHeight, clusterIdx, i + 1));
+      Light light = UnpackLight(lightIdx);
       float lightDistance = distance(light.position, v_position);
       vec3 L = (light.position - v_position) / lightDistance;
 
