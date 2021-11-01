@@ -100,13 +100,14 @@ export default function(params) {
       Light light = UnpackLight(lightIdx);
       float lightDist = distance(light.position, position.xyz);
       
+      vec3 L = (light.position - position.xyz) / lightDist;
+      vec3 V = normalize(light.position - u_eye);
+      vec3 H = normalize(V + L);
+      
       float lightIntensity = cubicGaussian(2.0 * lightDist / light.radius);
       float lambertTerm = max(dot(L, normal.xyz), 0.0);
       
       //Calculate Blinn-Phong shading 
-      vec3 L = (light.position - position.xyz) / lightDist;
-      vec3 V = normalize(light.position - u_eye);
-      vec3 H = normalize(V + L);
       float exponent = 200.0;
       float specularTerm = pow(max(dot(H, normal.xyz), 0.0), exponent); 
       
