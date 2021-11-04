@@ -1,11 +1,11 @@
 WebGL Forward+ and Clustered Deferred Shading
 ======================
 
-**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 5**
+**University of Pennsylvania, CIS 565: GPU Programming and Architecture, Project 3**
 
-* (TODO) YOUR NAME HERE
-* Tested on: (TODO) **Google Chrome 222.2** on
-  Windows 22, i7-2222 @ 2.22GHz 22GB, GTX 222 222MB (Moore 2222 Lab)
+* **Name:**  Beini Gu
+* [LinkedIn](https://www.linkedin.com/in/rgu/), [personal website](https://www.seas.upenn.edu/~gubeini/), [twitter](https://twitter.com/scoutydren), etc.
+* Tested on: Chrome, Windows 10, AMD Ryzen 7 3700X 8-Core Processor 3.59 GHz 16GB, GTX 2060
 
 ### Live Online
 
@@ -13,16 +13,22 @@ WebGL Forward+ and Clustered Deferred Shading
 
 ### Demo Video/GIF
 
-[![](img/video.png)](TODO)
+![](img/demo.gif)
 
-### (TODO: Your README)
+### Blinn-Phong shading
 
-*DO NOT* leave the README to the last minute! It is a crucial part of the
-project, and we will not be able to grade you without a good README.
+| Lambertian shading                              | Blinn-Phong Shading      |
+| ----------------------------------------------- | ------------------------ |
+| <img src="img/lambert.gif" style="zoom:33%;" /> | ![](img/blinn_phong.gif) |
 
-This assignment has a considerable amount of performance analysis compared
-to implementation work. Complete the implementation early to leave time!
+## Performance Analysis
 
+Compare your implementations of Forward+ and Clustered Deferred shading and analyze their differences.
+
+  - Is one of them faster?
+  - Is one of them better at certain types of workloads?
+  - What are the benefits and tradeoffs of using one over the other?
+  - For any differences in performance, briefly explain what may be causing the difference.
 
 ### Credits
 
